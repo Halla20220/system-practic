@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SYSTEM PRACTICE</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      background-size: 400% 400%;
+      animation: gradientAnimation 10s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+      font-size: 48px;
+      color: white;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6);
+    }
+
+    #timer {
+      font-size: 24px;
+      color: white;
+      margin: 10px 0;
+    }
+
+    #number-display {
+      font-size: 240px;
+      font-weight: bold;
+      color: #e74c3c;
+      margin: 20px 0;
+      text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.6);
+    }
+
+    .card-container {
+      display: inline-block;
+      perspective: 1000px;
+    }
+
+    .card {
+      width: 544.32px;
+      height: 381.78px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateY(0deg);
+      transition: transform 0.6s ease-in-out;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      background-image: url('new_images/texture.png');
+      background-size: cover;
+      background-position: center;
+    }
+
+    .card img {
+      width: 100%;
+      height: 100%;
+      border-radius: 15px;
+      object-fit: cover;
+    }
+
+    .card-front,
+    .card-back {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 15px;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    button {
+      padding: 18px 36px;
+      font-size: 20px;
+      margin: 20px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #logo {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 150px;
+    }
+
+    .flipped-review {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .review-card {
+      width: 150px;
+      height: 100px;
+      margin: 10px;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      background-size: cover;
+      background-position: center;
+      transition: transform 0.3s ease;
+    }
+
+    .review-card:hover {
+      transform: scale(1.1);
+    }
+
+    .review-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+  </style>
+</head>
+<body>
+  <img id="logo" src="new_images/logo.png" alt="Logo">
+
+  <h1>SYSTEM PRACTICE</h1>
+  <div id="timer">Time: 0s</div>
+  <div id="number-display">--</div>
+  <div class="card-container">
+    <div class="card" id="flip-card">
+      <div class="card-front"></div>
+      <div class="card-back">
+        <img id="card-image" src="" alt="Card Image">
+      </div>
+    </div>
+  </div>
+  <br>
+  <button id="start-btn">Start</button>
+  <button id="finish-btn" style="display: none;">Finish</button>
+  <div id="stats" style="display: none; margin-top: 20px;"></div>
+
+  <!-- Review Section -->
+  <div id="review-section" style="display: none;">
+    <h2>Flipped Cards Review</h2>
+    <div class="flipped-review" id="flipped-cards-container"></div>
+  </div>
+
+  <audio id="flip-sound" src="flip-sound.mp3"></audio>
+
+  <script>
+    const totalCards = 100;
+    let currentIndex = 0;
+    let timerInterval;
+    let secondsElapsed = 0;
+    let isFlipped = false;
+    let isRunning = false;
+
+    const randomDigits = Array.from({ length: totalCards }, (_, i) => String(i).padStart(2, '0'));
+    let flippedCards = 0;
+    let flippedCardIndices = [];
+
+    const startBtn = document.getElementById('start-btn');
+    const finishBtn = document.getElementById('finish-btn');
+    const timerDisplay = document.getElementById('timer');
+    const numberDisplay = document.getElementById('number-display');
+    const flipCard = document.getElementById('flip-card');
+    const cardImage = document.getElementById('card-image');
+    const statsDisplay = document.getElementById('stats');
+    const flipSound = document.getElementById('flip-sound');
+    const reviewSection = document.getElementById('review-section');
+    const flippedCardsContainer = document.getElementById('flipped-cards-container');
+
+    function preloadImages() {
+      for (let i = 1; i <= totalCards; i++) {
+        const img = new Image();
+        img.src = `new_images/${i}.png`;
+      }
+    }
+
+    function getRandomIndex() {
+      return Math.floor(Math.random() * totalCards);
+    }
+
+    function showCurrentCard() {
+      const randomIndex = getRandomIndex();
+      numberDisplay.textContent = randomDigits[randomIndex];
+      cardImage.src = `new_images/${randomIndex + 1}.png`;
+      flipCard.style.transform = 'rotateY(0deg)';
+      isFlipped = false;
+    }
+
+    function startTimer() {
+      secondsElapsed = 0;
+      timerDisplay.textContent = `Time: 0s`;
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        timerDisplay.textContent = `Time: ${secondsElapsed}s`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function showStats() {
+      const unflippedCards = totalCards - flippedCards;
+      const score = Math.round((flippedCards / totalCards) * 100);
+      const level = score >= 80 ? "Expert" : score >= 50 ? "Intermediate" : "Beginner";
+
+      statsDisplay.style.display = 'block';
+      statsDisplay.innerHTML = `
+        <h2>Game Stats</h2>
+        <p>Time Taken: ${secondsElapsed} seconds</p>
+        <p>Flipped Cards: ${flippedCards}</p>
+        <p>Unflipped Cards: ${unflippedCards}</p>
+        <p>Score: ${score}%</p>
+        <p>Level: ${level}</p>
+      `;
+    }
+
+    function displayFlippedCardsReview() {
+      flippedCardsContainer.innerHTML = '';
+      flippedCardIndices.forEach(index => {
+        const cardElement = document.createElement('div');
+        cardElement.classList.add('review-card');
+        cardElement.style.backgroundImage = `url('new_images/${index + 1}.png')`;
+        flippedCardsContainer.appendChild(cardElement);
+      });
+      reviewSection.style.display = 'block';
+    }
+
+    startBtn.addEventListener('click', () => {
+      preloadImages();
+      isRunning = true;
+      flippedCards = 0;
+      flippedCardIndices = [];
+      startBtn.style.display = 'none';
+      finishBtn.style.display = 'inline-block';
+      statsDisplay.style.display = 'none';
+      reviewSection.style.display = 'none';
+      startTimer();
+      showCurrentCard();
+    });
+
+    finishBtn.addEventListener('click', () => {
+      isRunning = false;
+      stopTimer();
+      showStats();
+      displayFlippedCardsReview();
+      startBtn.style.display = 'inline-block';
+      finishBtn.style.display = 'none';
+    });
+
+    function flipCurrentCard() {
+      if (!isRunning) return;
+      isFlipped = !isFlipped;
+      flipCard.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+      if (isFlipped) {
+        flippedCards++;
+        flippedCardIndices.push(currentIndex);
+        flipSound.play();
+      }
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (!isRunning) return;
+      if (event.key === ' ') {
+        flipCurrentCard();
+      } else if (event.key === 'ArrowDown') {
+        if (currentIndex < totalCards - 1) {
+          currentIndex++;
+          showCurrentCard();
+        }
+      } else if (event.key === 'ArrowUp') {
+        if (currentIndex > 0) {
+          currentIndex--;
+          showCurrentCard();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
